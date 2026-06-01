@@ -122,11 +122,11 @@ function initParticles() {
 
 // ------ 主题预设 ------
 const THEMES = {
-  orange:   { name:'橘子汽水', fandom:'#FF8D65', bgDeep:'#1a1410', bgPanel:'#221a16', bgCard:'#2a1e18', border:'#3a2a20', text:'#f0e8e0', textSec:'#b0a090', textMut:'#706858', particle:'#FFC4AF' },
-  rice:     { name:'糯米雪糕', fandom:'#67B3DB', bgDeep:'#0d151a', bgPanel:'#121c22', bgCard:'#18242b', border:'#253540', text:'#e4f0f8', textSec:'#a0c0d8', textMut:'#608098', particle:'#9EDAF1' },
-  melon:    { name:'西瓜冷翠', fandom:'#ff6d6f', bgDeep:'#1a0f10', bgPanel:'#221416', bgCard:'#2a1a1c', border:'#3a2528', text:'#f8e8e8', textSec:'#c8a0a0', textMut:'#907070', particle:'#ffc9ca' },
-  hawthorn: { name:'雪顶山楂', fandom:'#DA2E53', bgDeep:'#1a0d10', bgPanel:'#221216', bgCard:'#2a181c', border:'#3a2028', text:'#f8e4e8', textSec:'#c8a0a8', textMut:'#906870', particle:'#FDF5DC' },
-  lime:     { name:'咸柠汽水', fandom:'#96CAA4', bgDeep:'#0d1510', bgPanel:'#121c16', bgCard:'#18241c', border:'#253528', text:'#e4f4e8', textSec:'#a0c8a8', textMut:'#609068', particle:'#E3F17C' },
+  orange:   { name:'橘子汽水', fandom:'#FF8D65', bgDeep:'#fff8f5', bgPanel:'#fff0eb', bgCard:'#ffe8e0', border:'#f0d0c0', text:'#3a2018', textSec:'#8a6050', textMut:'#b09080', particle:'#FFC4AF' },
+  rice:     { name:'糯米雪糕', fandom:'#67B3DB', bgDeep:'#f5fafd', bgPanel:'#ebf4fa', bgCard:'#e0eef6', border:'#c8dce8', text:'#1a2832', textSec:'#507088', textMut:'#8098a8', particle:'#9EDAF1' },
+  melon:    { name:'西瓜冷翠', fandom:'#ff6d6f', bgDeep:'#fdf5f5', bgPanel:'#faebeb', bgCard:'#f6e0e0', border:'#e8c8c8', text:'#321a1a', textSec:'#885050', textMut:'#a88080', particle:'#ffc9ca' },
+  hawthorn: { name:'雪顶山楂', fandom:'#DA2E53', bgDeep:'#fdf5f6', bgPanel:'#faebee', bgCard:'#f6e0e4', border:'#e8ccd0', text:'#321820', textSec:'#884050', textMut:'#a87078', particle:'#FDF5DC' },
+  lime:     { name:'咸柠汽水', fandom:'#96CAA4', bgDeep:'#f5fdf7', bgPanel:'#ebfaf0', bgCard:'#e0f6e8', border:'#c8e8d0', text:'#1a321e', textSec:'#508858', textMut:'#80a888', particle:'#E3F17C' },
 };
 
 let currentTheme = 'orange';
