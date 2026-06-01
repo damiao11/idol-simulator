@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星光之下 - 爱豆模拟器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<div id="particles"></div>
+
+<!-- ===== 标题画面 ===== -->
+<div id="screen-title" class="screen active">
+  <div class="title-glow">
+    <h1 class="title-main">星光之下</h1>
+    <p class="title-sub">爱豆模拟器</p>
+  </div>
+  <div class="title-divider"></div>
+  <p class="title-desc">既能走花路，也要面对黑暗</p>
+  <div class="title-themes">
+    <span class="title-themes-label">选择主题</span>
+    <div class="theme-grid" id="title-theme-grid"></div>
+  </div>
+  <button class="btn btn-primary btn-lg" onclick="startGame()">开始游戏</button>
+  <button class="btn btn-outline btn-sm" id="btn-continue" style="display:none;margin-top:12px;" onclick="continueGame()">继续游戏</button>
+</div>
+
+<!-- ===== 游戏介绍（首次弹出） ===== -->
+<div id="screen-intro" class="screen overlay active">
+  <div class="modal">
+    <div class="modal-header">游戏介绍</div>
+    <div class="modal-body" style="text-align:left;">
+      <div class="intro-section">
+        <h3>养成线（事业向）</h3>
+        <p>自定义你的爱豆 —— 从练习生起步，训练、出道、发专辑、打歌、上综艺、接代言、开演唱会，一步步走向顶流。可solo可组团，甚至转型演员。</p>
+      </div>
+      <div class="intro-section">
+        <h3>私生线（黑暗向）</h3>
+        <p>随着名气增长，私生饭也将盯上你。私信轰炸、跟踪监视、隐私泄露、造谣人肉……面对私生的每一次选择 —— 硬刚、冷处理、还是妥协 —— 都将引向截然不同的结局。</p>
+      </div>
+      <div class="intro-section">
+        <h3>玩法</h3>
+        <p>每周选择行动，管理属性与资源，应对随机事件，在光明与黑暗之间走出你自己的路。</p>
+      </div>
+    </div>
+    <div class="modal-choices">
+      <button class="modal-choice-btn" onclick="closeIntro()">开始</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 角色创建 ===== -->
+<div id="screen-create" class="screen">
+  <div class="panel panel-create">
+    <h2>创建你的爱豆</h2>
+    <div class="create-form">
+      <!-- 姓名 -->
+      <div class="form-group">
+        <label>艺名</label>
+        <input type="text" id="input-name" placeholder="输入爱豆艺名..." maxlength="12">
+      </div>
+
+      <!-- 人设 -->
+      <div class="form-group">
+        <label>人设定位</label>
+        <div class="radio-group" id="persona-group">
+          <label class="radio-card">
+            <input type="radio" name="persona" value="cool" checked>
+            <span>高冷ACE</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="persona" value="cute">
+            <span>元气甜豆</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="persona" value="sexy">
+            <span>性感主舞</span>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="persona" value="pure">
+            <span>清纯门面</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 应援色 -->
+      <div class="form-group">
+        <label>应援色</label>
+        <div class="color-picker-row">
+          <input type="color" id="input-color" value="#ff69b4">
+          <span class="color-hex" id="color-hex">#ff69b4</span>
+        </div>
+      </div>
+
+      <!-- 属性分配 -->
+      <div class="form-group">
+        <label>初始属性分配 <span class="label-hint">（剩余点数：<strong id="points-left">40</strong>）</span></label>
+        <div class="stat-alloc">
+          <div class="stat-row">
+            <span>唱功</span>
+            <button class="btn-stat" onclick="adjustStat('singing', -1)">-</button>
+            <span class="stat-val" id="val-singing">40</span>
+            <button class="btn-stat" onclick="adjustStat('singing', 1)">+</button>
+          </div>
+          <div class="stat-row">
+            <span>舞蹈</span>
+            <button class="btn-stat" onclick="adjustStat('dancing', -1)">-</button>
+            <span class="stat-val" id="val-dancing">40</span>
+            <button class="btn-stat" onclick="adjustStat('dancing', 1)">+</button>
+          </div>
+          <div class="stat-row">
+            <span>颜值</span>
+            <button class="btn-stat" onclick="adjustStat('visuals', -1)">-</button>
+            <span class="stat-val" id="val-visuals">40</span>
+            <button class="btn-stat" onclick="adjustStat('visuals', 1)">+</button>
+          </div>
+          <div class="stat-row">
+            <span>魅力</span>
+            <button class="btn-stat" onclick="adjustStat('charisma', -1)">-</button>
+            <span class="stat-val" id="val-charisma">40</span>
+            <button class="btn-stat" onclick="adjustStat('charisma', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="confirmCreate()">确认出道</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-title')">返回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 主游戏界面 ===== -->
+<div id="screen-game" class="screen">
+  <!-- 顶栏 -->
+  <div class="game-topbar">
+    <div class="topbar-left">
+      <span class="week-label">第 <strong id="disp-week">1</strong> 周</span>
+      <span class="stage-badge" id="disp-stage">练习生</span>
+    </div>
+    <div class="topbar-center">
+      <span class="fame-display">🌟 <span id="disp-fame">0</span></span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-sm btn-ghost" onclick="openSettings()">主题</button>
+      <span>💰 <span id="disp-money">0</span>万</span>
+      <span>❤️ <span id="disp-mental">100</span></span>
+    </div>
+  </div>
+
+  <div class="game-layout">
+    <!-- 左栏 - 属性 -->
+    <div class="game-left">
+      <div class="card">
+        <h3 id="disp-name">我的爱豆</h3>
+        <div class="stat-bars">
+          <div class="stat-bar-item"><span>唱功</span><div class="bar"><div class="bar-fill" id="bar-singing"></div></div><span id="txt-singing">5</span></div>
+          <div class="stat-bar-item"><span>舞蹈</span><div class="bar"><div class="bar-fill" id="bar-dancing"></div></div><span id="txt-dancing">5</span></div>
+          <div class="stat-bar-item"><span>颜值</span><div class="bar"><div class="bar-fill" id="bar-visuals"></div></div><span id="txt-visuals">5</span></div>
+          <div class="stat-bar-item"><span>魅力</span><div class="bar"><div class="bar-fill" id="bar-charisma"></div></div><span id="txt-charisma">5</span></div>
+          <div class="stat-bar-item"><span>体力</span><div class="bar"><div class="bar-fill" id="bar-stamina"></div></div><span id="txt-stamina">100</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>粉丝</h3>
+        <div class="big-number" id="disp-fans">0</div>
+        <div class="sub-text">关注中</div>
+      </div>
+      <div class="card card-danger">
+        <h3>⚠️ 私生威胁</h3>
+        <div class="threat-bar" id="threat-bar">
+          <div class="threat-fill" id="threat-fill"></div>
+        </div>
+        <div class="threat-label" id="threat-label">安全</div>
+      </div>
+    </div>
+
+    <!-- 中栏 - 事件与行动 -->
+    <div class="game-center">
+      <div class="card card-log" id="event-log">
+        <h3>事件</h3>
+        <div class="log-content" id="log-content">
+          <p class="log-entry system">欢迎来到星光之下。你是一名刚签约的练习生，梦想从这里开始。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右栏 - 行动选择 -->
+    <div class="game-right">
+      <div class="card">
+        <h3>本周行动 <span class="label-hint">（选择 <span id="actions-remaining">2</span> 项）</span></h3>
+        <div class="actions-list" id="actions-list">
+          <!-- 动态生成 -->
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-next-week" onclick="nextWeek()">进入下一周 ▶</button>
+      </div>
+      <button class="btn btn-outline btn-block" onclick="openMessages()">查看私信</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 私信弹窗 ===== -->
+<div id="screen-messages" class="screen overlay">
+  <div class="phone-frame">
+    <div class="phone-header">
+      <span>私信</span>
+      <button class="btn-close" onclick="closeMessages()">✕</button>
+    </div>
+    <div class="phone-chat" id="chat-window">
+      <!-- 消息动态生成 -->
+    </div>
+  </div>
+</div>
+
+<!-- ===== 事件弹窗 ===== -->
+<div id="screen-event" class="screen overlay">
+  <div class="modal">
+    <div class="modal-header" id="modal-title">事件</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-choices" id="modal-choices"></div>
+  </div>
+</div>
+
+<!-- ===== 主题设置 ===== -->
+<div id="screen-settings" class="screen overlay">
+  <div class="modal">
+    <div class="modal-header">选择主题</div>
+    <div class="modal-body">
+      <div class="theme-grid" id="theme-grid">
+        <!-- JS动态生成 -->
+      </div>
+      <div class="form-group" style="margin-top:16px;">
+        <label class="toggle-row">
+          <input type="checkbox" id="setting-particles" checked onchange="toggleParticles(this.checked)">
+          <span>显示粒子效果</span>
+        </label>
+      </div>
+      <input type="hidden" id="setting-particle-color" value="#FFC4AF">
+    </div>
+    <div class="modal-choices">
+      <button class="modal-choice-btn" onclick="showScreen('screen-game')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 结局画面 ===== -->
+<div id="screen-ending" class="screen">
+  <div class="ending-container">
+    <h1 class="ending-title" id="ending-title"></h1>
+    <p class="ending-subtitle" id="ending-subtitle"></p>
+    <div class="ending-divider"></div>
+    <div class="ending-stats" id="ending-stats"></div>
+    <p class="ending-epilogue" id="ending-epilogue"></p>
+    <button class="btn btn-primary btn-lg" onclick="restartGame()">重新开始</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
