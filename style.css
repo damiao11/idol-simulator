@@ -1,20 +1,21 @@
 /* ===== CSS 变量 ===== */
 :root {
-  --fandom: #FF8D65;
-  --fandom-glow: rgba(255, 141, 101, 0.4);
-  --bg-deep: #fff8f5;
-  --bg-panel: #fff0eb;
-  --bg-card: #ffe8e0;
-  --text-primary: #3a2018;
-  --text-secondary: #8a6050;
-  --text-muted: #b09080;
-  --border: #f0d0c0;
-  --danger: #ff4466;
-  --danger-glow: rgba(255, 68, 102, 0.3);
-  --success: #44cc66;
-  --warning: #ff8833;
-  --accent: #6688ff;
-  --gold: #cc8800;
+  --fandom: #CBBFDB;
+  --fandom-glow: rgba(203, 191, 219, 0.4);
+  --bg-deep: #EBE4F4;
+  --bg-panel: #FFFEE8;
+  --bg-card: #FFFEE8;
+  --bg-accent: #D2F1F6;
+  --text-primary: #333;
+  --text-secondary: #777;
+  --text-muted: #999;
+  --border: rgba(203, 191, 219, 0.38);
+  --danger: #e05566;
+  --danger-glow: rgba(224, 85, 102, 0.3);
+  --success: #44aa55;
+  --warning: #e08830;
+  --accent: #6677cc;
+  --gold: #b8960a;
   --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
@@ -217,7 +218,7 @@ body {
 .threat-label { text-align: center; font-size: 12px; margin-top: 6px; color: var(--text-muted); }
 
 /* 日志区 */
-.card-log { min-height: 450px; max-height: 550px; overflow-y: auto; }
+.card-log { min-height: 450px; max-height: 550px; overflow-y: auto; background: var(--bg-accent, #D2F1F6); }
 .log-content { display: flex; flex-direction: column; gap: 8px; }
 .log-entry {
   padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.8;
@@ -324,7 +325,7 @@ body {
 .theme-swatch {
   width: 80px; height: 80px; border-radius: 12px; cursor: pointer;
   display: flex; align-items: flex-end; justify-content: center;
-  padding: 8px; font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  padding: 8px; font-size: 16px; font-weight: bold; color: #555;
   border: 3px solid transparent; transition: all 0.2s;
   font-family: var(--font);
 }

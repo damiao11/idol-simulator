@@ -120,37 +120,35 @@ function initParticles() {
   }
 }
 
-// ------ 主题预设 ------
+// ------ 主题预设 (c1主背景/c2卡片/c3强调/c4边框) ------
 const THEMES = {
-  orange:   { name:'橘子汽水', fandom:'#FF8D65', bgDeep:'#fff8f5', bgPanel:'#fff0eb', bgCard:'#ffe8e0', border:'#f0d0c0', text:'#3a2018', textSec:'#8a6050', textMut:'#b09080', particle:'#FFC4AF' },
-  rice:     { name:'糯米雪糕', fandom:'#67B3DB', bgDeep:'#f5fafd', bgPanel:'#ebf4fa', bgCard:'#e0eef6', border:'#c8dce8', text:'#1a2832', textSec:'#507088', textMut:'#8098a8', particle:'#9EDAF1' },
-  melon:    { name:'西瓜冷翠', fandom:'#ff6d6f', bgDeep:'#fdf5f5', bgPanel:'#faebeb', bgCard:'#f6e0e0', border:'#e8c8c8', text:'#321a1a', textSec:'#885050', textMut:'#a88080', particle:'#ffc9ca' },
-  hawthorn: { name:'雪顶山楂', fandom:'#DA2E53', bgDeep:'#fdf5f6', bgPanel:'#faebee', bgCard:'#f6e0e4', border:'#e8ccd0', text:'#321820', textSec:'#884050', textMut:'#a87078', particle:'#FDF5DC' },
-  lime:     { name:'咸柠汽水', fandom:'#96CAA4', bgDeep:'#f5fdf7', bgPanel:'#ebfaf0', bgCard:'#e0f6e8', border:'#c8e8d0', text:'#1a321e', textSec:'#508858', textMut:'#80a888', particle:'#E3F17C' },
+  t1: { c1:'#EBE4F4', c2:'#FFFEE8', c3:'#D2F1F6', c4:'#CBBFDB' },
+  t2: { c1:'#FFDCBB', c2:'#FFFADB', c3:'#E3F0C7', c4:'#A6CACB' },
+  t3: { c1:'#EAC0C3', c2:'#FAEDE5', c3:'#C7E3E0', c4:'#84B4C3' },
+  t4: { c1:'#B8D4C3', c2:'#F7F9D7', c3:'#C9E2CB', c4:'#7CA09D' },
+  t5: { c1:'#FFD4D8', c2:'#FFF6DE', c3:'#C7E2EA', c4:'#B8AAC8' },
 };
 
-let currentTheme = 'orange';
+let currentTheme = 't1';
 
 function applyThemePreset(key) {
   currentTheme = key;
   const t = THEMES[key];
   if (!t) return;
-  G.fandomColor = t.fandom;
+  G.fandomColor = t.c4;
   const root = document.documentElement;
-  root.style.setProperty('--fandom', t.fandom);
-  root.style.setProperty('--fandom-glow', t.fandom + '66');
-  root.style.setProperty('--bg-deep', t.bgDeep);
-  root.style.setProperty('--bg-panel', t.bgPanel);
-  root.style.setProperty('--bg-card', t.bgCard);
-  root.style.setProperty('--border', t.border);
-  root.style.setProperty('--text-primary', t.text);
-  root.style.setProperty('--text-secondary', t.textSec);
-  root.style.setProperty('--text-muted', t.textMut);
-  document.body.style.background = t.bgDeep;
-  document.querySelectorAll('.particle').forEach(p => p.style.background = t.particle);
-  const themePicker = document.getElementById('theme-color-picker');
-  if (themePicker) themePicker.value = t.fandom;
-  document.getElementById('setting-particle-color').value = t.particle;
+  root.style.setProperty('--fandom', t.c4);
+  root.style.setProperty('--fandom-glow', t.c4 + '66');
+  root.style.setProperty('--bg-deep', t.c1);
+  root.style.setProperty('--bg-panel', t.c2);
+  root.style.setProperty('--bg-card', t.c2);
+  root.style.setProperty('--border', t.c4 + '60');
+  root.style.setProperty('--text-primary', '#333');
+  root.style.setProperty('--text-secondary', '#777');
+  root.style.setProperty('--text-muted', '#999');
+  root.style.setProperty('--bg-accent', t.c3);
+  document.body.style.background = t.c1;
+  document.querySelectorAll('.particle').forEach(p => p.style.background = t.c4);
 }
 
 // ------ 继续游戏 ------
@@ -169,26 +167,19 @@ function toggleParticles(on) { document.getElementById('particles').style.displa
 
 // ------ 渲染主题选择网格 ------
 function renderThemeGrid() {
+  const items = Object.entries(THEMES).map(([key, t], i) => {
+    const sel = key === currentTheme ? ' theme-swatch-selected' : '';
+    const grad = `linear-gradient(180deg, ${t.c1} 0%, ${t.c2} 33%, ${t.c3} 66%, ${t.c4} 100%)`;
+    return `<div class="theme-swatch${sel}" onclick="applyThemePreset('${key}');renderThemeGrid();" style="background:${grad};" title="模板${i+1}">
+      <span>${i+1}</span>
+    </div>`;
+  }).join('');
   // 设置弹窗
   const grid = document.getElementById('theme-grid');
-  if (grid) {
-    grid.innerHTML = Object.entries(THEMES).map(([key, t]) => {
-      const sel = key === currentTheme ? ' theme-swatch-selected' : '';
-      return `<div class="theme-swatch${sel}" onclick="applyThemePreset('${key}');renderThemeGrid();" style="background:${t.fandom};" title="${t.name}">
-        <span>${t.name}</span>
-      </div>`;
-    }).join('');
-  }
+  if (grid) grid.innerHTML = items;
   // 标题画面
   const titleGrid = document.getElementById('title-theme-grid');
-  if (titleGrid) {
-    titleGrid.innerHTML = Object.entries(THEMES).map(([key, t]) => {
-      const sel = key === currentTheme ? ' theme-swatch-selected' : '';
-      return `<div class="theme-swatch${sel}" onclick="applyThemePreset('${key}');renderThemeGrid();" style="background:${t.fandom};" title="${t.name}">
-        <span>${t.name}</span>
-      </div>`;
-    }).join('');
-  }
+  if (titleGrid) titleGrid.innerHTML = items;
 }
 
 // ------ 关闭介绍 ------
@@ -983,8 +974,8 @@ function restartGame() {
   document.getElementById('val-charisma').textContent = '40';
   document.getElementById('points-left').textContent = '40';
 
-  currentTheme = 'orange';
-  applyThemePreset('orange');
+  currentTheme = 't1';
+  applyThemePreset('t1');
   deleteSave();
   document.getElementById('btn-continue').style.display = 'none';
   showScreen('screen-title');
@@ -996,7 +987,7 @@ function rand(min, max) {
 }
 
 // ------ 初始化 ------
-applyThemePreset('orange');
+applyThemePreset('t1');
 initParticles();
 showScreen('screen-title');
 renderThemeGrid();
