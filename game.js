@@ -13,7 +13,8 @@ function saveGame() {
     stage: G.stage, fame: G.fame, fans: G.fans, money: G.money,
     threat: G.threat, privacy: G.privacy,
     confronted: G.confronted, ignored: G.ignored, compromised: G.compromised,
-    stalkerName: G.stalkerName, week: G.week, lastTrained: G.lastTrained,
+    stalkerName: G.stalkerName, week: G.week, cycleWeeks: G.cycleWeeks,
+    lastTrained: G.lastTrained,
     maxActions: G.maxActions, messages: G.messages, ended: G.ended,
     currentTheme: currentTheme,
   };
@@ -31,7 +32,8 @@ function loadGame() {
     G.stage = d.stage; G.fame = d.fame; G.fans = d.fans; G.money = d.money;
     G.threat = d.threat; G.privacy = d.privacy;
     G.confronted = d.confronted; G.ignored = d.ignored; G.compromised = d.compromised;
-    G.stalkerName = d.stalkerName; G.week = d.week; G.lastTrained = d.lastTrained;
+    G.stalkerName = d.stalkerName; G.week = d.week;
+    G.cycleWeeks = d.cycleWeeks || 40; G.lastTrained = d.lastTrained;
     G.maxActions = d.maxActions; G.messages = d.messages || []; G.ended = d.ended;
     G.selectedActions = [];
     if (d.currentTheme) { currentTheme = d.currentTheme; applyThemePreset(currentTheme); }
@@ -80,6 +82,7 @@ const G = {
 
   // 时间
   week: 1,
+  cycleWeeks: 40,
 
   // 属性荒废追踪 (记录上次训练的周数)
   lastTrained: { singing: 0, dancing: 0, visuals: 0, charisma: 0 },
@@ -124,29 +127,44 @@ function initParticles() {
 const THEMES = {
   t1: { c1:'#EBE4F4', c2:'#FFFEE8', c3:'#D2F1F6', c4:'#CBBFDB' },
   t2: { c1:'#FFDCBB', c2:'#FFFADB', c3:'#E3F0C7', c4:'#A6CACB' },
-  t3: { c1:'#EAC0C3', c2:'#FAEDE5', c3:'#C7E3E0', c4:'#84B4C3' },
+  t3: { c1:'#A6247E', c2:'#F9BF2D', c3:'#F9EABF', c4:'#2D1A16' },
   t4: { c1:'#B8D4C3', c2:'#F7F9D7', c3:'#C9E2CB', c4:'#7CA09D' },
   t5: { c1:'#FFD4D8', c2:'#FFF6DE', c3:'#C7E2EA', c4:'#B8AAC8' },
+  t6: { c1:'#902F40', c2:'#F88A3F', c3:'#F74F4F', c4:'#541F31' },
 };
 
 let currentTheme = 't1';
+
+function isDark(hex) {
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16);
+  const g = parseInt(h.substring(2,4),16);
+  const b = parseInt(h.substring(4,6),16);
+  return (r+g+b)/3 < 128;
+}
 
 function applyThemePreset(key) {
   currentTheme = key;
   const t = THEMES[key];
   if (!t) return;
   G.fandomColor = t.c4;
+  const dark = isDark(t.c1);
+  const txt = dark ? '#f0ece8' : '#1a1a1a';
+  const txtSec = dark ? '#b0a898' : '#555';
+  const txtMut = dark ? '#887868' : '#777';
   const root = document.documentElement;
   root.style.setProperty('--fandom', t.c4);
   root.style.setProperty('--fandom-glow', t.c4 + '66');
   root.style.setProperty('--bg-deep', t.c1);
   root.style.setProperty('--bg-panel', t.c2);
   root.style.setProperty('--bg-card', t.c2);
-  root.style.setProperty('--border', t.c4 + '60');
-  root.style.setProperty('--text-primary', '#333');
-  root.style.setProperty('--text-secondary', '#777');
-  root.style.setProperty('--text-muted', '#999');
+  root.style.setProperty('--border', dark ? (t.c4+'40') : (t.c4+'60'));
+  root.style.setProperty('--text-primary', txt);
+  root.style.setProperty('--text-secondary', txtSec);
+  root.style.setProperty('--text-muted', txtMut);
   root.style.setProperty('--bg-accent', t.c3);
+  if (dark) document.body.style.color = txt;
+  else document.body.style.color = '';
   document.body.style.background = t.c1;
   document.querySelectorAll('.particle').forEach(p => p.style.background = t.c4);
 }
@@ -234,6 +252,7 @@ function confirmCreate() {
   G.charisma = createStats.charisma;
   G.stamina = 100;
   G.mental = 100;
+  G.cycleWeeks = parseInt(document.getElementById('input-cycle').value);
 
   // 随机生成私生代号
   const stalkerNames = ['影子人偶', '深渊的爱', '永远注视你', '只属于我的星', '暗夜守护者', '第七号跟踪狂', '糖果与刀', '404_not_found'];
@@ -381,6 +400,8 @@ function getActions() {
     fashion_week: { label: '时装周', desc: '颜值相关，人气+收入', cost: 15, available: () => G.fans >= 8000 && G.visuals >= 40 && G.money >= 15, effect: () => { G.money -= 15; const bonus = Math.floor(G.visuals / 10); const f = rand(20, 40) + bonus; G.fame += f; G.money += rand(50, 120); addLog('fame', `时装周造型出圈，人气 +${f}，获得品牌合作邀约。`); } },
 
     collab_stage: { label: '合作舞台', desc: '与其他艺人合作，人气+魅力', cost: null, available: () => G.fans >= 10000 && G.charisma >= 50 && G.stamina >= 20, effect: () => { G.stamina -= 20; const f = rand(30, 60); G.charisma = Math.min(100, G.charisma + rand(2, 5)); G.fame += f; addLog('fame', `合作舞台引发热议，人气 +${f}，圈了不少新粉。`); checkStageUp(); } },
+
+    fan_chat: { label: '回复粉丝消息', desc: '与粉丝互动，人气+粉丝增长', cost: null, available: () => G.fans >= 1000 && G.fame >= 100, effect: () => { showFanChat(); } },
   };
 
   // 根据不同阶段返回可选行动
@@ -656,7 +677,302 @@ function applyDecay() {
   }
 }
 
-// ------ 私生系统 ------
+// ------ 粉丝消息系统 ------
+// ------ 粉丝多轮对话 ------
+let _fanChat = null, _fanRound = 0;
+
+function showFanChat() {
+  const src = FAN_CHATS[Math.floor(Math.random() * FAN_CHATS.length)];
+  // 根据周期决定轮数: 40周→2轮, 86→3轮, 128→4轮, 168→5轮
+  const maxByCycle = G.cycleWeeks >= 168 ? 5 : G.cycleWeeks >= 128 ? 4 : G.cycleWeeks >= 86 ? 3 : 2;
+  const rounds = src.rounds.slice(0, Math.min(maxByCycle, src.rounds.length));
+  _fanChat = { rounds }; _fanRound = 0;
+  renderFanRound();
+  showScreen('screen-event');
+  document.getElementById('modal-title').textContent = '粉丝消息';
+}
+
+function renderFanRound() {
+  const r = _fanChat.rounds[_fanRound];
+  const isLast = _fanRound >= _fanChat.rounds.length - 1;
+  let html = '';
+  // 显示历史
+  for (let i = 0; i <= _fanRound; i++) {
+    const hr = _fanChat.rounds[i];
+    html += `<div style="background:var(--bg-accent);padding:10px 14px;border-radius:10px;margin-bottom:6px;font-style:italic;">粉丝：${hr.q}</div>`;
+    if (hr._chosen != null) {
+      html += `<div style="background:var(--bg-card);padding:8px 14px;border-radius:10px;margin:0 0 8px 20px;font-size:13px;">你：${hr.opts[hr._chosen].text}</div>`;
+      html += `<div style="color:var(--text-secondary);font-size:12px;margin:0 0 10px 20px;">粉丝：${hr.opts[hr._chosen].reply}</div>`;
+    }
+  }
+  document.getElementById('modal-body').innerHTML = html;
+  // 当前轮选项
+  let btns = r.opts.map((o, i) =>
+    `<button class="modal-choice-btn" onclick="pickFanOpt(${i})">${o.text}</button>`
+  ).join('');
+  btns += `<button class="modal-choice-btn" onclick="endFanChat()" style="border-color:var(--danger);color:var(--danger);">${isLast ? '结束对话' : '中断对话'}</button>`;
+  document.getElementById('modal-choices').innerHTML = btns;
+}
+
+function pickFanOpt(idx) {
+  const r = _fanChat.rounds[_fanRound];
+  r._chosen = idx;
+  r.opts[idx].effect();
+  _fanRound++;
+  if (_fanRound >= _fanChat.rounds.length) {
+    endFanChat();
+  } else {
+    renderFanRound();
+  }
+}
+
+function endFanChat() {
+  _fanChat = null; _fanRound = 0;
+  showScreen('screen-game');
+  updateAllUI();
+  saveGame();
+}
+
+const FAN_CHATS = [
+  // 1. 近况问候
+  { rounds: [
+    { q:'欧尼/欧巴！最近过得好吗？我们都很想你！', opts:[
+      { text:'我也很想你们！最近在努力排练新舞台', reply:'呜呜呜好感动！注意身体别太累！', effect:()=>{G.fame+=rand(3,8);G.mental=Math.min(100,G.mental+3);} },
+      { text:'谢谢关心，一切顺利', reply:'那就好！我们会一直支持你的！', effect:()=>{G.fans+=rand(50,150);} },
+    ]},
+    { q:'新舞台是什么风格的？能剧透一点点吗？', opts:[
+      { text:'哈哈保密，不过会比上次更炸', reply:'啊啊啊已经开始期待了！！', effect:()=>{G.fame+=rand(5,12);addLog('fame','剧透引发粉丝疯狂讨论。');} },
+      { text:'（发了一个神秘表情）', reply:'？？？这是什么意思！！疯狂解读中', effect:()=>{G.fame+=rand(8,15);addLog('fame','神秘暗示冲上热搜。');} },
+    ]},
+    { q:'那这次回归你觉得压力大吗？', opts:[
+      { text:'压力肯定有，但更多是期待', reply:'我们就喜欢你这种自信！', effect:()=>{G.charisma+=rand(1,3);addLog('good','自信态度圈粉。');} },
+      { text:'说实话有点，因为想给你们最好的', reply:'你已经是最好的了！别给自己太大压力', effect:()=>{G.mental+=5;addLog('good','粉丝的安慰让你感到温暖。');} },
+    ]},
+    { q:'除了回归，今年还有什么计划吗？', opts:[
+      { text:'可能会有巡演，还在协调中', reply:'巡演！！！已经开始存钱了！', effect:()=>{G.fame+=rand(5,10);addLog('fame','巡演消息引发粉丝狂欢。');} },
+      { text:'先专注这次回归吧，之后的事情之后再说', reply:'好的！我们一步步来，每一步都陪你走', effect:()=>{G.fans+=rand(100,200);addLog('good','粉丝感受到你的踏实和专注。');} },
+    ]},
+    { q:'最后一个问题！最近有什么小确幸吗？', opts:[
+      { text:'今天吃到了很好吃的拉面', reply:'啊啊啊太可爱了！我们也去吃同款！', effect:()=>{G.mental+=3;addLog('good','日常分享拉近了和粉丝的距离。');} },
+      { text:'看到你们在签售会上写的信，每一封都看了', reply:'……原来你真的会看……（抹泪）', effect:()=>{G.mental+=5;G.fans+=rand(200,400);addLog('good','走心回应感动全场。');} },
+    ]},
+  ]},
+  // 2. 状态关心
+  { rounds: [
+    { q:'有人说你最近状态不好，是真的吗？', opts:[
+      { text:'最近确实有点累，但看到你们就充满电了', reply:'心疼！好好休息最重要', effect:()=>{G.mental=Math.min(100,G.mental+8);G.fans+=rand(100,300);} },
+      { text:'谣言，我状态非常好，别担心', reply:'那就好！不过累了随时说', effect:()=>{G.fame+=rand(3,8);} },
+    ]},
+    { q:'你平时累了会怎么放松？', opts:[
+      { text:'听歌、看电影，或者干脆睡一整天', reply:'好真实！和我们一样！', effect:()=>{G.fans+=rand(100,200);addLog('good','接地气的回答让粉丝感到亲近。');} },
+      { text:'其实没什么时间放松，训练排得很满', reply:'太辛苦了……你一定要照顾好自己', effect:()=>{G.mental+=3;addLog('system','粉丝心疼你，纷纷留言注意健康。');} },
+    ]},
+    { q:'你有失眠的时候吗？失眠了会做什么？', opts:[
+      { text:'偶尔会，就起来继续练习了', reply:'？？这也太拼了吧', effect:()=>{G.stamina-=5;addLog('system','粉丝为你拼命的态度既骄傲又心疼。');} },
+      { text:'听听轻音乐或者看粉丝的留言，慢慢就睡着了', reply:'原来我们的留言还有这个功能！以后多发！', effect:()=>{G.mental+=3;G.fans+=rand(50,150);addLog('good','温馨回复让粉丝感到自己的存在有意义。');} },
+    ]},
+  ]},
+  // 3. 自拍与形象
+  { rounds: [
+    { q:'可以发自拍吗？好久没看到新鲜的照片了！', opts:[
+      { text:'（发一张自拍）', reply:'啊啊啊啊太好看了！火速保存！', effect:()=>{G.fame+=rand(10,20);G.fans+=rand(200,500);} },
+      { text:'等新专辑发了再拍～', reply:'那专辑什么时候发！', effect:()=>{G.fame+=rand(5,10);} },
+    ]},
+    { q:'你觉得自己哪个角度最好看？', opts:[
+      { text:'左脸吧，右脸不太上镜', reply:'明明360度无死角！', effect:()=>{G.visuals=Math.min(100,G.visuals+rand(1,2));addLog('good','粉丝开始制作你的自拍合集。');} },
+      { text:'都还行，主要看摄影师技术', reply:'摄影师压力很大！', effect:()=>{G.fame+=rand(3,5);} },
+    ]},
+    { q:'有没有想过染什么新发色？', opts:[
+      { text:'下次回归想尝试蓝色', reply:'蓝色！！已经在想象了！一定很绝', effect:()=>{G.visuals+=rand(1,2);addLog('good','新发色预告引发粉丝讨论热潮。');} },
+      { text:'听造型师的，不过我也喜欢现在的发色', reply:'现在的确实也很好看！', effect:()=>{addLog('system','粉丝尊重你的审美选择。');} },
+    ]},
+  ]},
+  // 4. 舞台与新歌
+  { rounds: [
+    { q:'新歌循环一百遍了！什么时候能看到舞台？', opts:[
+      { text:'编舞已经完成了，应该快了', reply:'编舞！！已经开始期待直拍了！', effect:()=>{G.fame+=rand(8,15);G.dancing=Math.min(100,G.dancing+rand(1,2));addLog('fame','舞台预告引发热议。');} },
+      { text:'还在打磨细节，我希望做到最好', reply:'这就是我们一直爱你的原因', effect:()=>{G.fans+=rand(100,300);addLog('good','认真态度获得尊重。');} },
+    ]},
+    { q:'这次舞蹈难度怎么样？', opts:[
+      { text:'说实话挺难的，每天练到凌晨', reply:'成品一定很震撼！注意身体！', effect:()=>{G.dancing=Math.min(100,G.dancing+rand(2,5));G.stamina-=10;addLog('good','刻苦训练的消息让粉丝更期待。');} },
+      { text:'有挑战才有进步，我喜欢', reply:'好酷！喜欢不服输的你', effect:()=>{G.charisma=Math.min(100,G.charisma+rand(1,3));addLog('good','积极态度感染粉丝。');} },
+    ]},
+    { q:'编舞中最难的动作是什么？', opts:[
+      { text:'有个360度转身接地板动作，练了上百遍', reply:'光听着就觉得好难……', effect:()=>{G.dancing+=rand(1,3);addLog('good','粉丝对舞台难度有了更深的理解。');} },
+      { text:'不能剧透太多！到时候看直拍就知道了', reply:'好！我们到时候一帧一帧看！', effect:()=>{G.fame+=rand(3,8);addLog('fame','期待值被拉满。');} },
+    ]},
+    { q:'你想过自己编舞吗？', opts:[
+      { text:'有在尝试，但觉得自己还不够格', reply:'谦虚了！你跳的舞自己编完全没问题', effect:()=>{G.dancing+=rand(1,2);addLog('good','粉丝的信任给了你信心。');} },
+      { text:'以后有机会一定会的', reply:'期待那一天的到来！', effect:()=>{addLog('system','一个flag被立下了。');} },
+    ]},
+  ]},
+  // 5. 私生与安全
+  { rounds: [
+    { q:'你对私生饭怎么看？我们好担心你的安全', opts:[
+      { text:'谢谢关心，公司已经在处理，我会保护好自己', reply:'一定要好好的！', effect:()=>{G.mental=Math.min(100,G.mental+5);G.fans+=rand(50,200);} },
+      { text:'说实话很困扰……但这也是成名代价吧', reply:'不是的！成名不代表要承受这些', effect:()=>{G.mental+=3;G.threat=Math.max(0,G.threat-2);} },
+    ]},
+    { q:'如果有粉丝做出过激行为，你希望我们怎么做？', opts:[
+      { text:'保护好自己，不要对线，交给公司处理', reply:'明白了！不会给你添麻烦的', effect:()=>{addLog('good','理智引导让粉丝群体更加成熟。');} },
+      { text:'看到了可以举报，但你们的安全最重要', reply:'双向奔赴的爱……做你最坚实的后盾', effect:()=>{G.fans+=rand(100,300);G.mental+=3;addLog('good','暖心互动成为饭圈佳话。');} },
+    ]},
+    { q:'你觉得粉丝和爱豆之间最好的距离是什么？', opts:[
+      { text:'台上和台下的距离，不远不近刚刚好', reply:'说得好！我们会在台下好好应援的', effect:()=>{G.charisma+=rand(1,3);addLog('good','得体的回答获得业内人士点赞。');} },
+      { text:'在遵守边界的前提下，像朋友一样', reply:'朋友……这个定位好暖', effect:()=>{G.fans+=rand(200,400);addLog('good','温暖定位让粉丝更加死忠。');} },
+    ]},
+  ]},
+  // 6. 未来与规划
+  { rounds: [
+    { q:'如果有一天不当爱豆了，会去做什么？', opts:[
+      { text:'从来没想过，我想一直站在舞台上', reply:'我们也会一直在台下！一言为定！', effect:()=>{G.fans+=rand(200,400);G.mental+=3;} },
+      { text:'也许会开个咖啡店吧，过安静的日子', reply:'那我们天天去喝咖啡！', effect:()=>{addLog('system','温馨对话让人感觉温暖。');} },
+    ]},
+    { q:'你会亲自给我们做咖啡吗？', opts:[
+      { text:'当然，但只给认真应援的粉丝做', reply:'我马上把应援棒举到天上去！', effect:()=>{G.fans+=rand(100,200);addLog('good','轻松玩笑活跃气氛。');} },
+      { text:'我怕我做的太难喝把你们吓跑了', reply:'只要是你做的，毒药也喝！', effect:()=>{G.fame+=rand(3,8);addLog('good','幽默引发二创。');} },
+    ]},
+    { q:'十年后你觉得你会在做什么？', opts:[
+      { text:'可能还在这个行业，但身份也许会变', reply:'不管什么身份我们都支持！', effect:()=>{addLog('system','粉丝感叹你的长远眼光。');} },
+      { text:'十年后太远了，先把今年过好吧', reply:'也是！脚踏实地最重要', effect:()=>{addLog('system','务实的态度让粉丝觉得可靠。');} },
+    ]},
+  ]},
+  // 7. 成长与变化
+  { rounds: [
+    { q:'你觉得自己最大的变化是什么？', opts:[
+      { text:'学会了珍惜每一个舞台', reply:'这句话好戳……', effect:()=>{G.mental+=5;G.fans+=rand(200,500);addLog('good','走心回答让老粉泪目。');} },
+      { text:'变得不那么在意别人的评价了', reply:'对！做自己就够了！', effect:()=>{G.charisma=Math.min(100,G.charisma+rand(2,4));addLog('good','成熟态度获路人好感。');} },
+    ]},
+    { q:'有什么是你一直没变的吗？', opts:[
+      { text:'对舞台的渴望，从练习生到现在从没变过', reply:'这就是我们追随你的原因', effect:()=>{G.fame+=rand(5,10);addLog('good','坚定信念感染所有人。');} },
+      { text:'挑食的习惯一直没变（笑）', reply:'哈哈突然接地气！可爱', effect:()=>{addLog('good','反差萌让粉丝直呼可爱。');} },
+    ]},
+    { q:'练习生时期有什么难忘的事吗？', opts:[
+      { text:'有一次月末考核失误，一个人在练习室哭到凌晨', reply:'原来你也这样过……现在的你真的很耀眼', effect:()=>{G.mental+=5;addLog('good','脆弱回忆让粉丝更加心疼和珍惜你。');} },
+      { text:'和同期练习生一起吃路边摊，聊梦想聊到天亮', reply:'好青春的画面！那些朋友现在还有联系吗', effect:()=>{addLog('system','温馨回忆让粉丝感受到你柔软的一面。');} },
+    ]},
+  ]},
+  // 8. 生活日常
+  { rounds: [
+    { q:'最近有什么想推荐的吗？', opts:[
+      { text:'一首歌，很适合一个人安静的时候听', reply:'马上去搜！', effect:()=>{G.singing=Math.min(100,G.singing+rand(1,2));addLog('good','推荐引发关注。');} },
+      { text:'推荐大家多喝水，对身体好', reply:'养生爱豆！', effect:()=>{G.fame+=rand(3,6);addLog('system','养生建议成话题。');} },
+    ]},
+    { q:'你平时会熬夜吗？', opts:[
+      { text:'经常，回归期练到凌晨是常态', reply:'虽然心疼但这就是专业', effect:()=>{G.stamina-=5;addLog('system','粉丝了解背后艰辛。');} },
+      { text:'在努力改了，最近尽量12点前睡', reply:'加油！陪你一起早睡', effect:()=>{G.stamina+=5;addLog('good','健康态度获赞。');} },
+    ]},
+    { q:'除了音乐和舞蹈，你有什么隐藏技能吗？', opts:[
+      { text:'我会做烘焙，虽然卖相不太好', reply:'想吃你做的饼干！！！', effect:()=>{G.mental+=3;addLog('good','隐藏技能让粉丝更加着迷。');} },
+      { text:'好像没有什么特别的……发呆算吗', reply:'发呆比赛冠军！', effect:()=>{addLog('system','无聊技能反而让粉丝觉得可爱。');} },
+    ]},
+  ]},
+  // 9. 粉丝与饭圈
+  { rounds: [
+    { q:'你知道吗，你的应援色在演唱会上汇成一片海的时候好美', opts:[
+      { text:'我每次在台上看到那片颜色就觉得很安心', reply:'我们会一直为你点亮那片海', effect:()=>{G.mental=Math.min(100,G.mental+8);G.fans+=rand(100,300);addLog('good','双向的爱感动全场。');} },
+      { text:'我也觉得！每次看到都想哭', reply:'不许哭！哭了我们也会哭的', effect:()=>{G.mental+=5;addLog('good','感性的回应让粉丝更加团结。');} },
+    ]},
+    { q:'你对我们有什么期望吗？', opts:[
+      { text:'希望你们在爱我的同时也要爱自己', reply:'呜呜呜这句话我们记住了', effect:()=>{G.fans+=rand(200,400);addLog('good','暖心寄语成为粉丝之间的名言。');} },
+      { text:'希望你们开心，不要因为我而争吵', reply:'我们会努力做理智粉的', effect:()=>{addLog('good','正面的引导改善了饭圈风气。');} },
+    ]},
+    { q:'你觉得什么样的粉丝最让你印象深刻？', opts:[
+      { text:'有一个粉丝说因为我的歌走出了抑郁症，我哭了很久', reply:'你的存在本身就是光', effect:()=>{G.mental+=10;G.charisma+=rand(2,4);addLog('good','感人的分享让更多人意识到偶像的正面影响。');} },
+      { text:'每一个认真应援的粉丝我都记得', reply:'我们也会一直记得你的好', effect:()=>{G.fans+=rand(100,200);addLog('good','真诚的回答让粉丝感到被重视。');} },
+    ]},
+    { q:'如果有粉丝之间发生争执，你希望我们怎么做？', opts:[
+      { text:'冷静沟通，不要上升到人身攻击', reply:'明白！我们尽量不让饭圈变战场', effect:()=>{addLog('good','理性引导让饭圈氛围改善。');} },
+      { text:'来听我的歌冷静一下', reply:'这招好！音乐是最好的解药', effect:()=>{G.fame+=rand(3,5);addLog('system','用音乐化解矛盾，高情商。');} },
+    ]},
+  ]},
+  // 10. 假期与旅行
+  { rounds: [
+    { q:'如果有休假的话最想去哪里？', opts:[
+      { text:'想去海边，躺在沙滩上什么都不做', reply:'画面感好强！我们也想去了', effect:()=>{G.mental+=5;addLog('system','悠闲的想象让粉丝感到放松。');} },
+      { text:'想去日本吃拉面', reply:'哈哈哈吃货实锤！求偶遇！', effect:()=>{G.fame+=rand(3,5);addLog('good','吃货人设圈粉。');} },
+    ]},
+    { q:'你上次休假是什么时候？', opts:[
+      { text:'不记得了，好像很久以前', reply:'……辛苦了，公司快给人放假！', effect:()=>{addLog('system','粉丝开始刷#给爱豆放假#话题。');} },
+      { text:'上个月有一天！虽然只睡了半天但也很开心', reply:'半天也值得珍惜！', effect:()=>{G.mental+=3;addLog('system','微小确幸让粉丝既心疼又欣慰。');} },
+    ]},
+    { q:'休假的时候会发动态吗？', opts:[
+      { text:'可能会发，但不想打扰你们的休息时间', reply:'请务必打扰！！', effect:()=>{G.fans+=rand(50,100);addLog('good','粉丝的热情让你感到被需要。');} },
+      { text:'如果拍了好看的照片就发', reply:'期待假期明信片！', effect:()=>{addLog('system','粉丝开始期待你的假期营业。');} },
+    ]},
+  ]},
+  // 11. 友情与合作
+  { rounds: [
+    { q:'你有没有特别想合作的前辈？', opts:[
+      { text:'有几位我一直很尊敬的前辈，能合作的话是梦想成真', reply:'说出名字！我们去帮你@他们！', effect:()=>{G.fame+=rand(5,10);G.charisma+=rand(1,2);addLog('fame','合作话题引发跨圈讨论。');} },
+      { text:'合作要看缘分，尊重每一位前辈的档期', reply:'谦虚有礼！这才是专业', effect:()=>{addLog('good','高情商回答获得路人好感。');} },
+    ]},
+    { q:'圈内有没有特别好的朋友？', opts:[
+      { text:'有几个，虽然见面的机会不多但一直保持联系', reply:'真朋友不需要天天见面', effect:()=>{G.charisma+=rand(1,2);addLog('system','粉丝开始猜测你的朋友圈。');} },
+      { text:'我觉得朋友不在多而在真诚，目前有几个很珍惜的人', reply:'成熟！保护好那些关系', effect:()=>{addLog('good','成熟的态度让粉丝自豪。');} },
+    ]},
+  ]},
+  // 12. 季节与节日
+  { rounds: [
+    { q:'冬天和夏天你更喜欢哪个？', opts:[
+      { text:'冬天，可以穿很多好看的大衣', reply:'衣架子穿什么都好看！', effect:()=>{G.visuals+=rand(1,2);addLog('system','粉丝开始期待你的冬季穿搭。');} },
+      { text:'夏天！虽然热但是舞台更有感觉', reply:'夏天舞台确实炸！', effect:()=>{G.dancing+=rand(1,2);addLog('good','对舞台的热爱感染了粉丝。');} },
+    ]},
+    { q:'节日一般怎么过？', opts:[
+      { text:'大部分时间在工作，但会给家人打电话', reply:'家人永远是最温暖的港湾', effect:()=>{G.mental+=3;addLog('system','温馨的回答让粉丝感到亲切。');} },
+      { text:'和成员/同事一起过，算是一种特别的节日氛围', reply:'团魂！', effect:()=>{G.charisma+=rand(1,2);addLog('good','团魂展示让团粉狂喜。');} },
+    ]},
+    { q:'有没有收到过特别难忘的节日礼物？', opts:[
+      { text:'粉丝手写的一本书，每一页都是给我的一句话', reply:'我们也想参与这个！下次我们也做', effect:()=>{G.mental+=5;G.fans+=rand(100,300);addLog('good','感人的礼物故事引发粉丝创作冲动。');} },
+      { text:'有一个粉丝送了自己种的盆栽，现在还活得好好的', reply:'这也太用心了吧！', effect:()=>{addLog('system','温暖的小故事让粉丝感到被看见。');} },
+    ]},
+  ]},
+  // 13. 回忆与初心
+  { rounds: [
+    { q:'你还记得第一次上台时的心情吗？', opts:[
+      { text:'紧张到腿发抖，但灯光亮起来的那一刻就什么都不怕了', reply:'这就是为舞台而生的人', effect:()=>{G.charisma+=rand(2,3);addLog('good','初舞台回忆令老粉泪目。');} },
+      { text:'说实话大脑一片空白，等反应过来已经结束了', reply:'哈哈哈现在应该不会了吧', effect:()=>{addLog('system','真实可爱的回答让人会心一笑。');} },
+    ]},
+    { q:'如果能回到过去见刚出道的自己，会说什么？', opts:[
+      { text:'"别怕，你最后做到了"', reply:'这句话我也想说给那时候的自己', effect:()=>{G.mental+=8;G.fans+=rand(200,500);addLog('good','走心回答感动全场。');} },
+      { text:'"少吃点夜宵，减肥太难了"', reply:'哈哈哈太真实了！', effect:()=>{G.fame+=rand(5,10);addLog('good','幽默引发练习生们共鸣。');} },
+    ]},
+    { q:'是什么支撑你走到今天的？', opts:[
+      { text:'一半是不甘心，一半是你们的爱', reply:'我们会在你身后的', effect:()=>{G.fans+=rand(300,600);G.mental+=5;addLog('good','真诚回答让粉丝更加死忠。');} },
+      { text:'可能只是习惯了努力的感觉，停下来反而不自在了', reply:'这就是天赋加努力的完美组合', effect:()=>{G.charisma+=rand(2,3);addLog('good','粉丝被你的敬业精神折服。');} },
+    ]},
+  ]},
+  // 14. 轻松闲聊
+  { rounds: [
+    { q:'你会做饭吗？', opts:[
+      { text:'会做泡面和煎蛋（骄傲）', reply:'哈哈哈哈够用了！', effect:()=>{G.mental+=3;addLog('good','笨拙的厨艺反而让人觉得可爱。');} },
+      { text:'不太会，但最近在学', reply:'加油！期待某天看到你的厨艺vlog', effect:()=>{addLog('system','粉丝开始期待厨艺内容。');} },
+    ]},
+    { q:'有没有什么奇怪的小习惯？', opts:[
+      { text:'上台前一定要喝一口温水，不然嗓子不舒服', reply:'专业的习惯！', effect:()=>{addLog('system','粉丝了解了舞台背后的细节。');} },
+      { text:'睡觉必须抱着枕头，出差也带自己的枕头', reply:'好可爱！像一个小朋友', effect:()=>{G.mental+=2;addLog('good','可爱习惯让粉丝心都化了。');} },
+    ]},
+    { q:'如果有一天变成动物，想变什么？', opts:[
+      { text:'猫吧，高冷又自由', reply:'猫系爱豆实锤了！', effect:()=>{G.fame+=rand(3,6);addLog('system','粉丝开始用猫塑你。');} },
+      { text:'海豚，可以一直在海里游', reply:'好浪漫的答案', effect:()=>{addLog('system','浪漫回答引发粉丝创作欲。');} },
+    ]},
+  ]},
+  // 15. 坚持与信念
+  { rounds: [
+    { q:'你相信努力一定会有回报吗？', opts:[
+      { text:'不一定，但不努力一定没有', reply:'通透！这句话我记下了', effect:()=>{G.charisma+=rand(2,4);addLog('good','金句被粉丝广泛传播。');} },
+      { text:'说实话不知道，但不努力连可能性都没有', reply:'好真实……共勉', effect:()=>{addLog('good','诚实的态度让人信服。');} },
+    ]},
+    { q:'有没有一首歌或一句话支撑你走过低谷？', opts:[
+      { text:'"所有杀不死你的都会让你更强大"——虽然老套但真的有用', reply:'确实！你已经证明了很多次', effect:()=>{G.mental+=5;addLog('good','共鸣引发粉丝分享自己的故事。');} },
+      { text:'有一首很小众的歌，每次听都像充电', reply:'求歌名！我们需要同样的充电！', effect:()=>{G.singing+=rand(1,2);addLog('good','分享的歌引发关注。');} },
+    ]},
+    { q:'最后还有什么想说的吗？', opts:[
+      { text:'谢谢你们一直在这里。我会继续努力的', reply:'我们也会继续努力的！一起走吧', effect:()=>{G.fans+=rand(300,500);G.mental+=5;addLog('good','温暖收尾让对话成为饭圈美谈。');} },
+      { text:'希望下次见面的时候我们都比现在更好', reply:'一定会的！顶峰相见', effect:()=>{G.fame+=rand(5,15);addLog('good','励志收尾激励了所有人。');} },
+    ]},
+  ]},
+];
+
 function sasaengTick() {
   // 名气越高，私生威胁自然增长
   const fameGrowth = Math.floor(G.fame / 200);
@@ -827,12 +1143,12 @@ function checkEnding() {
   } else if (G.stage === 'legend' && G.threat >= 50) {
     ending = 'legend_dark';
   }
-  // 时间结局（40周）
-  else if (w >= 40 && G.fame >= 2000) {
+  // 时间结局
+  else if (w >= G.cycleWeeks && G.fame >= 2000) {
     ending = 'year_top';
-  } else if (w >= 40 && G.fame < 2000 && G.fame >= 100) {
+  } else if (w >= G.cycleWeeks && G.fame < 2000 && G.fame >= 100) {
     ending = 'year_mid';
-  } else if (w >= 40 && G.fame < 100) {
+  } else if (w >= G.cycleWeeks && G.fame < 100) {
     ending = 'year_fail';
   }
   // 威胁爆表
@@ -957,7 +1273,8 @@ function restartGame() {
   G.stage = 'trainee'; G.fame = 0; G.fans = 0; G.money = 0;
   G.threat = 0; G.privacy = 100;
   G.confronted = 0; G.ignored = 0; G.compromised = 0;
-  G.week = 1; G.lastTrained = { singing: 0, dancing: 0, visuals: 0, charisma: 0 };
+  G.week = 1; G.cycleWeeks = 40;
+  G.lastTrained = { singing: 0, dancing: 0, visuals: 0, charisma: 0 };
   G.selectedActions = []; G.maxActions = 2;
   G.messages = []; G.ended = false;
   createPoints = 40;

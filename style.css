@@ -6,9 +6,9 @@
   --bg-panel: #FFFEE8;
   --bg-card: #FFFEE8;
   --bg-accent: #D2F1F6;
-  --text-primary: #333;
-  --text-secondary: #777;
-  --text-muted: #999;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555;
+  --text-muted: #777;
   --border: rgba(203, 191, 219, 0.38);
   --danger: #e05566;
   --danger-glow: rgba(224, 85, 102, 0.3);
